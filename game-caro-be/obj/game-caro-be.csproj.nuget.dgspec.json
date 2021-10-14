@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\admin\\Desktop\\game-caro-be\\game-caro-be\\game-caro-be.csproj": {}
+    "D:\\Project\\game-caro-be\\game-caro-be\\game-caro-be.csproj": {}
   },
   "projects": {
-    "C:\\Users\\admin\\Desktop\\game-caro-be\\game-caro-be\\game-caro-be.csproj": {
+    "D:\\Project\\game-caro-be\\game-caro-be\\game-caro-be.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\admin\\Desktop\\game-caro-be\\game-caro-be\\game-caro-be.csproj",
+        "projectUniqueName": "D:\\Project\\game-caro-be\\game-caro-be\\game-caro-be.csproj",
         "projectName": "game-caro-be",
-        "projectPath": "C:\\Users\\admin\\Desktop\\game-caro-be\\game-caro-be\\game-caro-be.csproj",
+        "projectPath": "D:\\Project\\game-caro-be\\game-caro-be\\game-caro-be.csproj",
         "packagesPath": "C:\\Users\\admin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\admin\\Desktop\\game-caro-be\\game-caro-be\\obj\\",
+        "outputPath": "D:\\Project\\game-caro-be\\game-caro-be\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -39,6 +39,32 @@
       "frameworks": {
         "net5.0": {
           "targetAlias": "net5.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[5.0.11, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[5.0.11, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[5.0.11, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[5.0.11, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[5.0.11, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

@@ -5,6 +5,6 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <_PublishTargetUrl>D:\Project\game-caro-be\game-caro-be\bin\Release\net5.0\publish\</_PublishTargetUrl>
-    <History>True|2021-10-13T06:30:21.2340454Z;</History>
+    <History>True|2021-10-14T12:29:52.0729497Z;True|2021-10-14T19:29:36.7681938+07:00;True|2021-10-13T13:30:21.2340454+07:00;</History>
   </PropertyGroup>
 </Project>
