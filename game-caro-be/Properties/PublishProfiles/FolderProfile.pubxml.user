@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_PublishTargetUrl>D:\Project\game-caro-be\game-caro-be\bin\Release\net5.0\publish\</_PublishTargetUrl>
+    <History>True|2021-10-13T06:30:21.2340454Z;</History>
+  </PropertyGroup>
+</Project>
