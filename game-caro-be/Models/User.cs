@@ -12,5 +12,10 @@ namespace game_caro_be.Models
         public string username { get; set; }
 
         public string password { get; set; }
+
+        public string toString()
+        {
+            return id + "|" + username;
+        }
     }
 }

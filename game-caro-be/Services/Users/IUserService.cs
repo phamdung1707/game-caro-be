@@ -1,4 +1,5 @@
-﻿using System;
+﻿using game_caro_be.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,5 +11,7 @@ namespace game_caro_be.Services.Users
         Task<string> Register(string username, string password);
 
         Task<string> Login(string username, string password);
+
+        Task<User> FindById(long id);
     }
 }

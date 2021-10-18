@@ -11,5 +11,17 @@ namespace game_caro_be.Services
         Task<Message> Login(Message message);
 
         Task<Message> Register(Message message);
+
+        Message CreateRoom(Message message);
+
+        void cleanRoom(long charId);
+
+        Task<Message> JoinRoom(Message message);
+
+        Message ReadyRoom(Message message);
+
+        Message StartRoom(Message message);
+
+        Message Attack(Message message);
     }
 }

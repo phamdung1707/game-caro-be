@@ -67,5 +67,10 @@ namespace game_caro_be.Services.Users
             return "1|" + user.id + "|" + user.username;
         }
 
+        public async Task<User> FindById(long id)
+        {
+            return await _context.Users.FindAsync(id);
+        }
+
     }
 }
