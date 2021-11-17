@@ -41,19 +41,23 @@ namespace game_caro_be.Services
 
         public Message CreateRoom(Message message)
         {
+            int money = message.ReadInt();
+            int type = message.ReadInt();
             long charId = message.ReadLong();
 
             cleanRoom(charId);
 
             Room room = new Room()
             {
-                gamerId = -1L,
-                masterId = charId,
-                connectionMaster = GetConnectionId(charId),
+                playerTwo = -1L,
+                playerOne = charId,
+                connectionPlayerOne = GetConnectionId(charId),
                 isReady = false,
-                type = 0,
+                type = type,
                 isStarted = false,
-                data = "000000000"
+                data = creatDataRoom(type),
+                money = money,
+                hostId = charId
             };
 
             room.Id = random.Next(100000, 999999);
@@ -65,16 +69,20 @@ namespace game_caro_be.Services
 
             GameHub.rooms.Add(room);
 
-            message.data = room.Id + "|" + room.type + "|" + room.masterId + "|" + room.data;
+            message.data = room.Id + "|" + room.hostId + "|" + room.money + "|" + room.type + "|" + room.data;
+
+            Console.WriteLine(message.data);
 
             return message;
         }
 
-        public async Task<Message> JoinRoom(Message message)
+        public Message JoinRoom(Message message)
         {
             int roomId = message.ReadInt();
 
             long charId = message.ReadLong();
+
+            Console.WriteLine(roomId);
 
             if (!isExistRoom(roomId))
             {
@@ -98,22 +106,29 @@ namespace game_caro_be.Services
                 if (GameHub.rooms[i].Id == roomId)
                 {
                     room = GameHub.rooms[i];
-                    if (room.gamerId != -1L)
+                    if (room.playerTwo != -1L)
                     {
                         message.data = "0|Phòng đã đủ người";
                         return message;
                     }
-                    GameHub.rooms[i].gamerId = charId;
-                    GameHub.rooms[i].connectionGamer = GetConnectionId(charId);
+                    GameHub.rooms[i].playerTwo = charId;
+                    GameHub.rooms[i].connectionPlayerTwo = GetConnectionId(charId);
                     break;
                 }
             }
 
-            User userMaster = await _userService.FindById(room.masterId);
+            message.data = "1|" + room.Id + "|" + room.hostId + "|" + room.money + "|" + room.type + "|" + room.data;
 
-            User userGamer = await _userService.FindById(charId);
+            return message;
+        }
 
-            message.data = "1|" + room.Id + "|" + room.type + "|" + room.masterId + "|" + room.data + "|" + userMaster.id + "|" + userMaster.username + "|" + userGamer.id + "|" + userGamer.username;
+        public async Task<Message> GetUserById(long id)
+        {
+            User user = await _userService.FindById(id);
+
+            string data = "1|" + user.id + "|" + user.username + "|" + user.money + "|" + user.countWin + "|" + user.countGame;
+
+            Message message = new Message(5, data);
 
             return message;
         }
@@ -244,15 +259,15 @@ namespace game_caro_be.Services
         {
             for (int i = 0; i < GameHub.rooms.Count; i++)
             {
-                if (GameHub.rooms[i].masterId == charId)
+                if (GameHub.rooms[i].playerOne == charId)
                 {
                     GameHub.rooms.RemoveAt(i);
                     i--;
                 }
-                else if (GameHub.rooms[i].gamerId == charId)
+                else if (GameHub.rooms[i].playerTwo == charId)
                 {
-                    GameHub.rooms[i].gamerId = -1L;
-                    GameHub.rooms[i].connectionGamer = "";
+                    GameHub.rooms[i].playerTwo = -1L;
+                    GameHub.rooms[i].connectionPlayerTwo = "";
                 }
             }
         }
@@ -341,6 +356,22 @@ namespace game_caro_be.Services
                 return true;
             }
             return false;
+        }
+
+        public string creatDataRoom(int type)
+        {
+            if (type == 0)
+            {
+                return "000000000";
+            }
+
+            string data = "";
+            for (int i = 0; i < 100; i++)
+            {
+                data += "0";
+            }
+
+            return data;
         }
     }
 }

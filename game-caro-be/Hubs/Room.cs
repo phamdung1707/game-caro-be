@@ -13,14 +13,17 @@ namespace game_caro_be.Hubs
         }
 
         public int Id { get; set; }
-        public long masterId { get; set; }
-        public string connectionMaster { get; set; }
-        public long gamerId { get; set; }
-        public string connectionGamer { get; set; }
+        public long playerOne { get; set; }
+        public string connectionPlayerOne { get; set; }
+        public long playerTwo { get; set; }
+        public string connectionPlayerTwo { get; set; }
         public int type { get; set; }
         public string data { get; set; }
         public bool isReady { get; set; }
         public bool isStarted { get; set; }
+        public int money { get; set; }
+
+        public long hostId { get; set; }
 
     }
 }

@@ -17,15 +17,6 @@ namespace game_caro_be.Services.Users
 
         public async Task<string> Register(string username, string password)
         {
-            if (username.Length > 15)
-            {
-                return "0|Tài khoản tối đa 15 kí tự";
-            }
-            if (password.Length > 20)
-            {
-                return "0|Mật khẩu tối đa 20 kí tự";
-            }
-
             var users = await _context.Users.Where(us => us.username == username).ToListAsync();
 
             if (users.Count > 0)
@@ -36,27 +27,21 @@ namespace game_caro_be.Services.Users
             User user = new User()
             {
                 username = username,
-                password = password
+                password = password,
+                money = 1000L,
+                countGame = 0,
+                countWin = 0
             };
 
             _context.Users.Add(user);
 
             await _context.SaveChangesAsync();
 
-            return "1|Đăng ký thành công";
+            return "1|Đăng ký thành công tài khoản \"" + username + "\" mật khẩu \"" + password + "\"";
         }
 
         public async Task<string> Login(string username, string password)
         {
-            if (username.Length > 15)
-            {
-                return "0|Tài khoản tối đa 15 kí tự";
-            }
-            if (password.Length > 20)
-            {
-                return "0|Mật khẩu tối đa 20 kí tự";
-            }
-
             var user = await _context.Users.FirstOrDefaultAsync(us => us.username == username && us.password == password);
 
             if (user == null)
@@ -64,7 +49,7 @@ namespace game_caro_be.Services.Users
                 return "0|Thông tin tài khoản hoặc mật khẩu không chính xác";
             }
 
-            return "1|" + user.id + "|" + user.username;
+            return "1|" + user.id + "|" + user.username + "|" + user.money + "|" + user.countWin + "|" + user.countGame;
         }
 
         public async Task<User> FindById(long id)

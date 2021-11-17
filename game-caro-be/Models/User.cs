@@ -13,6 +13,12 @@ namespace game_caro_be.Models
 
         public string password { get; set; }
 
+        public long money { get; set; }
+
+        public int countWin { get; set; }
+
+        public int countGame { get; set; }
+
         public string toString()
         {
             return id + "|" + username;

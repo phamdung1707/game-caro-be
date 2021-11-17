@@ -16,7 +16,9 @@ namespace game_caro_be.Services
 
         void cleanRoom(long charId);
 
-        Task<Message> JoinRoom(Message message);
+        Message JoinRoom(Message message);
+
+        Task<Message> GetUserById(long id);
 
         Message ReadyRoom(Message message);
 
