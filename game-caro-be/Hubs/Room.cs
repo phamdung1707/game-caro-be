@@ -22,8 +22,9 @@ namespace game_caro_be.Hubs
         public bool isReady { get; set; }
         public bool isStarted { get; set; }
         public int money { get; set; }
-
         public long hostId { get; set; }
+        public long turnId { get; set; }
+        public bool isEnd { get; set; }
 
     }
 }

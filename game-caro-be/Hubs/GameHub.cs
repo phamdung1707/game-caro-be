@@ -1,4 +1,5 @@
-﻿using game_caro_be.Services;
+﻿using game_caro_be.Models;
+using game_caro_be.Services;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
@@ -37,7 +38,15 @@ namespace game_caro_be.Hubs
                     if (GameHub.rooms[i].playerTwo != -1)
                     {
                         Message message = new Message(5, "0");
-                        SendMsg(GameHub.rooms[i].connectionPlayerTwo, message).Wait();
+                        if (GameHub.rooms[i].isStarted)
+                        {
+                            UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].connectionPlayerTwo, message, GameHub.rooms[i].playerTwo, GameHub.rooms[i].money).Wait();
+                        }
+                        else
+                        {
+                            SendMsg(GameHub.rooms[i].connectionPlayerTwo, message).Wait();
+                        }
+                        
                     }
                     
                     GameHub.rooms.RemoveAt(i);
@@ -46,7 +55,17 @@ namespace game_caro_be.Hubs
                 else if (GameHub.rooms[i].playerTwo == userLogins[Context.ConnectionId])
                 {
                     Message message = new Message(5, "0");
-                    SendMsg(GameHub.rooms[i].connectionPlayerOne, message).Wait();
+
+                    if (GameHub.rooms[i].isStarted)
+                    {
+                        UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].connectionPlayerOne, message, GameHub.rooms[i].playerOne, GameHub.rooms[i].money).Wait();
+                    }
+                    else
+                    {
+                        SendMsg(GameHub.rooms[i].connectionPlayerOne, message).Wait();
+                    }
+
+                    
 
                     GameHub.rooms[i].playerTwo = -1L;
                     GameHub.rooms[i].connectionPlayerTwo = "";
@@ -55,6 +74,15 @@ namespace game_caro_be.Hubs
 
             userLogins.Remove(Context.ConnectionId);        
             return base.OnDisconnectedAsync(exception);
+        }
+
+        private async Task UpdateCountWinAndMoneyWhenEndGame(string connectionId, Message message, long id, int money)
+        {
+            User user = await _gameService.UpdateCountWinAndMoneyWhenEndGame(id, money);
+
+            message.data = "0|" + user.money + "|" + user.countWin;
+
+            await Clients.Clients(connectionId).SendAsync("ReceiveMessage", message.messageId.ToString(), message.data);
         }
 
         public async Task SendMsg(string connectionId, Message message)
@@ -109,9 +137,9 @@ namespace game_caro_be.Hubs
 
                     await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
 
-                    if (message.data.StartsWith("1"))
+                    if (resultMessage.data.StartsWith("1"))
                     {
-                        int roomJoinId = int.Parse(message.data.Split('|')[1]);
+                        int roomJoinId = int.Parse(resultMessage.data.Split('|')[1]);
 
                         Room roomJoin = GetRoomById(roomJoinId);
 
@@ -122,50 +150,97 @@ namespace game_caro_be.Hubs
                         await Clients.Clients(roomJoin.connectionPlayerOne).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
                     }               
                     break;
-                case 5:
-                    resultMessage = _gameService.ReadyRoom(message);
-                    if (message.data.StartsWith("0"))
-                    {
-                        await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
-                    }
-                    else
-                    {
-                        int roomReadyId = int.Parse(message.data.Split('|')[1]);
-
-                        Room roomReady = GetRoomById(roomReadyId);
-
-                        await Clients.Clients(Context.ConnectionId, roomReady.connectionPlayerOne).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
-                    }
-                    break;
                 case 6:
-                    resultMessage = _gameService.StartRoom(message);
-                    if (message.data.StartsWith("0"))
+                    for (int i = 0; i < GameHub.rooms.Count; i++)
                     {
-                        await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
-                    }
-                    else
-                    {
-                        int roomStartId = int.Parse(message.data.Split('|')[1]);
+                        if (GameHub.rooms[i].playerOne == userLogins[Context.ConnectionId])
+                        {
+                            if (GameHub.rooms[i].playerTwo != -1)
+                            {
+                                resultMessage = new Message(5, "0");
+                                if (GameHub.rooms[i].isStarted)
+                                {
+                                    User user = await _gameService.UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].playerTwo, GameHub.rooms[i].money);
+                                    resultMessage.data = "0|" + user.money + "|" + user.countWin;
+                                }
 
-                        Room roomStart = GetRoomById(roomStartId);
+                                SendMsg(GameHub.rooms[i].connectionPlayerTwo, resultMessage).Wait();
+                            }
 
-                        await Clients.Clients(Context.ConnectionId, roomStart.connectionPlayerTwo).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                            GameHub.rooms.RemoveAt(i);
+                            i--;
+                        }
+                        else if (GameHub.rooms[i].playerTwo == userLogins[Context.ConnectionId])
+                        {
+                            resultMessage = new Message(5, "0");
+                            if (GameHub.rooms[i].isStarted)
+                            {
+                                User user = await _gameService.UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].playerOne, GameHub.rooms[i].money);
+                                resultMessage.data = "0|" + user.money + "|" + user.countWin;
+                            }
+
+                            SendMsg(GameHub.rooms[i].connectionPlayerOne, resultMessage).Wait();
+
+                            GameHub.rooms[i].playerTwo = -1L;
+                            GameHub.rooms[i].connectionPlayerTwo = "";
+                        }
                     }
+
                     break;
                 case 7:
-                    resultMessage = _gameService.Attack(message);
-                    if (message.data.StartsWith("0"))
-                    {
-                        await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
-                    }
-                    else
-                    {
-                        int roomAttackId = int.Parse(message.data.Split('|')[1]);
+                    resultMessage = new Message(7, "1");
 
-                        Room roomAttack = GetRoomById(roomAttackId);
+                    int readyRoomId = message.ReadInt();
 
-                        await Clients.Clients(roomAttack.connectionPlayerOne, roomAttack.connectionPlayerTwo).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    for (int i = 0; i < GameHub.rooms.Count; i++)
+                    {
+                        if (GameHub.rooms[i].Id == readyRoomId)
+                        {
+                            GameHub.rooms[i].isStarted = false;
+                            GameHub.rooms[i].isEnd = false;
+                            GameHub.rooms[i].isReady = true;
+                            await Clients.Clients(Context.ConnectionId, GameHub.rooms[i].connectionPlayerOne).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                            break;
+                        }
                     }
+                    
+                    break;
+                case 8:
+                    Room roomStart = GetRoomById(int.Parse(message.data));
+
+                    resultMessage = await _gameService.StartRoom(message);                                      
+
+                    await Clients.Clients(Context.ConnectionId, roomStart.connectionPlayerTwo).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    break;
+                case 9:
+                    resultMessage = await _gameService.Attack(message);
+                    int roomAttackId = int.Parse(resultMessage.data.Split('|')[0]);
+
+                    Room roomAttack = GetRoomById(roomAttackId);                 
+
+                    await Clients.Clients(roomAttack.connectionPlayerOne, roomAttack.connectionPlayerTwo).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+
+                    break;
+                case 10:
+                    resultMessage = _gameService.SetMoney(message);
+                    int roomSetMoneyId = int.Parse(resultMessage.data.Split('|')[1]);
+
+                    Room roomSetMoney = GetRoomById(roomSetMoneyId);
+
+                    await Clients.Clients(roomSetMoney.connectionPlayerOne, roomSetMoney.connectionPlayerTwo).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    break;
+                case 11:
+                    resultMessage = _gameService.Chat(message);
+                    int roomChatId = int.Parse(resultMessage.data.Split('|')[0]);
+
+                    Room roomChat = GetRoomById(roomChatId);
+
+                    await Clients.Clients(roomChat.connectionPlayerOne, roomChat.connectionPlayerTwo).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    break;
+                case 12:
+                    resultMessage = await _gameService.ChatGlobal(message);
+
+                    await Clients.All.SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
                     break;
             }
 

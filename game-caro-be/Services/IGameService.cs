@@ -1,4 +1,5 @@
 ﻿using game_caro_be.Hubs;
+using game_caro_be.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,8 +23,16 @@ namespace game_caro_be.Services
 
         Message ReadyRoom(Message message);
 
-        Message StartRoom(Message message);
+        Task<Message> StartRoom(Message message);
 
-        Message Attack(Message message);
+        Task<Message> Attack(Message message);
+
+        Task<User> UpdateCountWinAndMoneyWhenEndGame(long id, int money);
+
+        Message SetMoney(Message message);
+
+        Message Chat(Message message);
+
+        Task<Message> ChatGlobal(Message message);
     }
 }

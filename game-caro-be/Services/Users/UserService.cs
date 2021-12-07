@@ -57,5 +57,98 @@ namespace game_caro_be.Services.Users
             return await _context.Users.FindAsync(id);
         }
 
+        public async Task<User> UpdateMoney(long id, int money)
+        {
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null)
+            {
+                return user;
+            }
+
+            user.money += money;
+
+            _context.Users.Update(user);
+
+            await _context.SaveChangesAsync();
+
+            return user;
+        }
+
+        public async Task UpdateCountGame(long id)
+        {
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null)
+            {
+                return;
+            }
+
+            user.countGame ++;
+
+            _context.Users.Update(user);
+
+            await _context.SaveChangesAsync();
+
+            return;
+        }
+
+        public async Task<User> UpdateCountGameAndMoneyWhenStartGame(long id, int money)
+        {
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            user.countGame++;
+
+            user.money -= money;
+
+            _context.Users.Update(user);
+
+            await _context.SaveChangesAsync();
+
+            return user;
+        }
+
+        public async Task<User> UpdateCountWinAndMoneyWhenEndGame(long id, int money)
+        {
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            user.countWin++;
+
+            user.money += money;
+
+            _context.Users.Update(user);
+
+            await _context.SaveChangesAsync();
+
+            return user;
+        }
+
+        public async Task UpdateCountWin(long id)
+        {
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null)
+            {
+                return;
+            }
+
+            user.countWin++;
+
+            _context.Users.Update(user);
+
+            await _context.SaveChangesAsync();
+
+            return;
+        }
     }
 }
