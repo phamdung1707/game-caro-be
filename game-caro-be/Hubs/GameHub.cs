@@ -30,47 +30,53 @@ namespace game_caro_be.Hubs
         public override Task OnDisconnectedAsync(Exception exception)
         {
             //_gameService.cleanRoom(userLogins[Context.ConnectionId]);
-
-            for (int i = 0; i < GameHub.rooms.Count; i++)
+            try
             {
-                if (GameHub.rooms[i].playerOne == userLogins[Context.ConnectionId])
+                for (int i = 0; i < GameHub.rooms.Count; i++)
                 {
-                    if (GameHub.rooms[i].playerTwo != -1)
+                    if (GameHub.rooms[i].playerOne == userLogins[Context.ConnectionId])
+                    {
+                        if (GameHub.rooms[i].playerTwo != -1)
+                        {
+                            Message message = new Message(5, "0");
+                            if (GameHub.rooms[i].isStarted)
+                            {
+                                UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].connectionPlayerTwo, message, GameHub.rooms[i].playerTwo, GameHub.rooms[i].money).Wait();
+                            }
+                            else
+                            {
+                                SendMsg(GameHub.rooms[i].connectionPlayerTwo, message).Wait();
+                            }
+
+                        }
+
+                        GameHub.rooms.RemoveAt(i);
+                        i--;
+                    }
+                    else if (GameHub.rooms[i].playerTwo == userLogins[Context.ConnectionId])
                     {
                         Message message = new Message(5, "0");
+
                         if (GameHub.rooms[i].isStarted)
                         {
-                            UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].connectionPlayerTwo, message, GameHub.rooms[i].playerTwo, GameHub.rooms[i].money).Wait();
+                            UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].connectionPlayerOne, message, GameHub.rooms[i].playerOne, GameHub.rooms[i].money).Wait();
                         }
                         else
                         {
-                            SendMsg(GameHub.rooms[i].connectionPlayerTwo, message).Wait();
+                            SendMsg(GameHub.rooms[i].connectionPlayerOne, message).Wait();
                         }
-                        
-                    }
-                    
-                    GameHub.rooms.RemoveAt(i);
-                    i--;
-                }
-                else if (GameHub.rooms[i].playerTwo == userLogins[Context.ConnectionId])
-                {
-                    Message message = new Message(5, "0");
 
-                    if (GameHub.rooms[i].isStarted)
-                    {
-                        UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].connectionPlayerOne, message, GameHub.rooms[i].playerOne, GameHub.rooms[i].money).Wait();
-                    }
-                    else
-                    {
-                        SendMsg(GameHub.rooms[i].connectionPlayerOne, message).Wait();
-                    }
 
-                    
 
-                    GameHub.rooms[i].playerTwo = -1L;
-                    GameHub.rooms[i].connectionPlayerTwo = "";
+                        GameHub.rooms[i].playerTwo = -1L;
+                        GameHub.rooms[i].connectionPlayerTwo = "";
+                    }
                 }
             }
+            catch
+            {
+            }
+           
 
             userLogins.Remove(Context.ConnectionId);        
             return base.OnDisconnectedAsync(exception);
@@ -78,6 +84,11 @@ namespace game_caro_be.Hubs
 
         private async Task UpdateCountWinAndMoneyWhenEndGame(string connectionId, Message message, long id, int money)
         {
+            if (id < 1)
+            {
+                return;
+            }
+
             User user = await _gameService.UpdateCountWinAndMoneyWhenEndGame(id, money);
 
             message.data = "0|" + user.money + "|" + user.countWin;
@@ -241,6 +252,39 @@ namespace game_caro_be.Hubs
                     resultMessage = await _gameService.ChatGlobal(message);
 
                     await Clients.All.SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    break;
+                case 13:
+                    resultMessage = _gameService.CreateRoomBot(message);
+                    await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    break;
+                case 14:
+                    resultMessage = await _gameService.StartRoomBot(message);
+
+                    await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+                    break;
+                case 15:
+                    resultMessage = await _gameService.AttackBot(message);
+
+                    await Clients.Clients(Context.ConnectionId).SendAsync("ReceiveMessage", resultMessage.messageId.ToString(), resultMessage.data);
+
+                    break;
+                case 16:
+                    int roomExitBotId = message.ReadInt();
+                    try
+                    {
+                        for (int i = 0; i < GameHub.rooms.Count; i++)
+                        {
+                            if (GameHub.rooms[i].Id == roomExitBotId)
+                            {
+                                GameHub.rooms.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    
                     break;
             }
 

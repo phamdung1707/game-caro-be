@@ -14,6 +14,8 @@ namespace game_caro_be.Services
 
         public static Random random = new Random();
 
+        public PlayWithBot _bot = new PlayWithBot();
+
         public GameService(IUserService userService)
         {
             _userService = userService;
@@ -71,6 +73,42 @@ namespace game_caro_be.Services
             GameHub.rooms.Add(room);
 
             message.data = room.Id + "|" + room.hostId + "|" + room.money + "|" + room.type + "|" + room.data;
+
+            Console.WriteLine(message.data);
+
+            return message;
+        }
+
+        public Message CreateRoomBot(Message message)
+        {
+            long charId = message.ReadLong();
+
+            cleanRoom(charId);
+
+            Room room = new Room()
+            {
+                playerTwo = -2L,
+                playerOne = charId,
+                connectionPlayerOne = GetConnectionId(charId),
+                isReady = false,
+                type = 1,
+                isStarted = false,
+                data = creatDataRoom(1),
+                money = 1000,
+                hostId = charId,
+                turnId = charId
+            };
+
+            room.Id = random.Next(100000, 999999);
+
+            while (isExistRoom(room.Id))
+            {
+                room.Id = random.Next(100000, 999999);
+            }
+
+            GameHub.rooms.Add(room);
+
+            message.data = room.Id + "|" + room.data;
 
             Console.WriteLine(message.data);
 
@@ -182,6 +220,29 @@ namespace game_caro_be.Services
             return message;
         }
 
+        public async Task<Message> StartRoomBot(Message message)
+        {
+            int roomId = message.ReadInt();
+
+            for (int i = 0; i < GameHub.rooms.Count; i++)
+            {
+                if (GameHub.rooms[i].Id == roomId)
+                {
+                    GameHub.rooms[i].isStarted = true;
+                    GameHub.rooms[i].isEnd = false;
+                    GameHub.rooms[i].isTurnOne = true;
+                    GameHub.rooms[i].data = creatDataRoom(GameHub.rooms[i].type);
+
+                    var userOne = await _userService.UpdateCountGameAndMoneyWhenStartGame(GameHub.rooms[i].playerOne, 0);
+
+                    message.data = GameHub.rooms[i].data + "|" + userOne.countGame;
+                    break;
+                }
+            }
+
+            return message;
+        }
+
         public async Task<Message> Attack(Message message)
         {
             int roomId = message.ReadInt();
@@ -194,7 +255,7 @@ namespace game_caro_be.Services
                 {
                     GameHub.rooms[i].data = data;
 
-                    string dameWin = getDameWin(GameHub.rooms[i].data);
+                    string dameWin = getDameWin(GameHub.rooms[i].data, GameHub.rooms[i].type);
 
                     if (dameWin == "0")
                     {
@@ -209,6 +270,45 @@ namespace game_caro_be.Services
 
                         GameHub.rooms[i].isEnd = true;
                     }
+
+                    break;
+                }
+            }
+
+            return message;
+        }
+
+        public async Task<Message> AttackBot(Message message)
+        {
+            int roomId = message.ReadInt();
+            string data = message.ReadString();
+
+            for (int i = 0; i < GameHub.rooms.Count; i++)
+            {
+                if (GameHub.rooms[i].Id == roomId)
+                {
+                    GameHub.rooms[i].data = data;
+
+                    string dameWin = getDameWin(GameHub.rooms[i].data, GameHub.rooms[i].type);
+
+                    if (dameWin == "0")
+                    {
+                        GameHub.rooms[i].data = _bot.getData(GameHub.rooms[i].data, GameHub.rooms[i].isTurnOne);
+
+                        dameWin = getDameWin(GameHub.rooms[i].data, GameHub.rooms[i].type);
+
+                        message.data = GameHub.rooms[i].data + "|" + dameWin;
+                    }
+                    else
+                    {
+                        User user = await _userService.UpdateCountWinAndMoneyWhenEndGame(GameHub.rooms[i].hostId, GameHub.rooms[i].money);
+
+                        message.data = GameHub.rooms[i].data + "|" + dameWin + "|" + user.money + "|" + user.countWin;
+
+                        GameHub.rooms[i].isEnd = true;
+                    }
+
+                    GameHub.rooms[i].isTurnOne = false;
 
                     break;
                 }
@@ -317,19 +417,36 @@ namespace game_caro_be.Services
             return "";
         }
 
-        public string getDameWin(string dataRoom)
+        public string getDameWin(string dataRoom, int type)
         {
-            string dataOne = isEndGame(dataRoom, "1");
-            if (!dataOne.Equals("0"))
+            if (type == 0)
             {
-                return dataOne;
-            }
+                string dataOne = isEndGame(dataRoom, "1");
+                if (!dataOne.Equals("0"))
+                {
+                    return dataOne;
+                }
 
-            string dataTwo = isEndGame(dataRoom, "2");
-            if (!dataTwo.Equals("0"))
-            {
-                return dataTwo;
+                string dataTwo = isEndGame(dataRoom, "2");
+                if (!dataTwo.Equals("0"))
+                {
+                    return dataTwo;
+                }
             }
+            if (type == 1)
+            {
+                string dataOne1 = getStrWin(dataRoom, 1);
+                if (!dataOne1.Equals("0"))
+                {
+                    return dataOne1;
+                }
+
+                string dataTwo1 = getStrWin(dataRoom, 2);
+                if (!dataTwo1.Equals("0"))
+                {
+                    return dataTwo1;
+                }
+            }      
 
             return "0";
         }
@@ -392,7 +509,7 @@ namespace game_caro_be.Services
             }
 
             string data = "";
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 80; i++)
             {
                 data += "0";
             }
@@ -404,11 +521,11 @@ namespace game_caro_be.Services
         {
             int[,] array = new int[8, 10];
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 8; i++)
             {
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < 10; j++)
                 {
-                    array[i, j] = int.Parse(data.Substring(i * 8 + j, 1));
+                    array[i, j] = int.Parse(data.Substring(i * 10 + j, 1));
                 }
             }
 
@@ -428,7 +545,7 @@ namespace game_caro_be.Services
             // check hàng ngang
             for (int i = 0; i < Rows; i++)
             {
-                for (int j = 0; j < Columns - 5; j++)
+                for (int j = 0; j < Columns - 4; j++)
                 {
                     if (array[i, j] == dame && array[i, j + 1] == dame && array[i, j + 2] == dame && array[i, j + 3] == dame && array[i, j + 4] == dame)
                     {
@@ -453,7 +570,7 @@ namespace game_caro_be.Services
             // check hàng dọc
             for (int j = 0; j < Columns; j++)
             {
-                for (int i = 0; i < Rows - 5; i++)
+                for (int i = 0; i < Rows - 4; i++)
                 {
                     if (array[i, j] == dame && array[i + 1, j] == dame && array[i + 2, j] == dame && array[i + 3, j] == dame && array[i + 4, j] == dame)
                     {
@@ -476,9 +593,9 @@ namespace game_caro_be.Services
             }
 
             // check trái trên -> phải dưới
-            for (int i = 0; i < Rows - 5; i++)
+            for (int i = 0; i < Rows - 4; i++)
             {
-                for (int j = 0; j < Columns - 5; j++)
+                for (int j = 0; j < Columns - 4; j++)
                 {
                     if (array[i, j] == dame && array[i + 1, j + 1] == dame && array[i + 2, j + 2] == dame && array[i + 3, j + 3] == dame && array[i + 4, j + 4] == dame)
                     {
@@ -501,9 +618,9 @@ namespace game_caro_be.Services
             }
 
             // check trái dưới -> phải trên
-            for (int i = Rows - 1; i > 5; i--)
+            for (int i = Rows - 1; i >= 4; i--)
             {
-                for (int j = 0; j < Columns - 5; j++)
+                for (int j = 0; j < Columns - 4; j++)
                 {
                     if (array[i, j] == dame && array[i - 1, j + 1] == dame && array[i - 2, j + 2] == dame && array[i - 3, j + 3] == dame && array[i - 4, j + 4] == dame)
                     {

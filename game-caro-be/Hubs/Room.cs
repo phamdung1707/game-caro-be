@@ -25,6 +25,7 @@ namespace game_caro_be.Hubs
         public long hostId { get; set; }
         public long turnId { get; set; }
         public bool isEnd { get; set; }
+        public bool isTurnOne { get; set; }
 
     }
 }

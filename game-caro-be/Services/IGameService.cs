@@ -34,5 +34,12 @@ namespace game_caro_be.Services
         Message Chat(Message message);
 
         Task<Message> ChatGlobal(Message message);
+
+        Message CreateRoomBot(Message message);
+
+        Task<Message> StartRoomBot(Message message);
+
+        Task<Message> AttackBot(Message message);
+
     }
 }
