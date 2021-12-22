@@ -28,7 +28,7 @@ namespace game_caro_be.Services.Users
             {
                 username = username,
                 password = password,
-                money = 1000L,
+                money = 100000L,
                 countGame = 0,
                 countWin = 0
             };
